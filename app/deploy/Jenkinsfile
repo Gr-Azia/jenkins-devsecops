@@ -3,20 +3,21 @@ pipeline {
     stages {
       stage("SCM Checkout"){
             steps{
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true]], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'github-login', url: 'https://github.com/Yuzyzy88/sec-trial-devsecops.git']]])
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true]], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'github-panca', url: 'https://github.com/pancaperkasa/jenkins-devsecops.git']]])
             }
         }        
         stage('Sonnar-Scanner') {
-                steps {
-                        sh '''
-                        cd app/
-                        /home/jenkins/sonar-scanner/sonar-scanner/bin/sonar-scanner \
-                        -Dsonar.projectKey="first-trial" \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://10.8.60.126:9000/ \
-                        -Dsonar.login="3f957f3042e086a47760fdcdc3d77b67bb682604"
-                        '''
-                        }
+            steps {
+                    sh '''
+                    cd app/
+                    /home/jenkins/sonar-scanner/sonar-scanner/bin/sonar-scanner \
+                    -Dsonar.projectKey="jenkins-devsecops" \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=http://10.8.60.126:9000/ \
+                    -Dsonar.login="e1f735b437dd77262312033dfa83766cdbc3508c"
+                    -Dsonar.qualitygate.wait=true
+                    '''
+            }
         }
         // check docker file
         stage("Misconfig Scanner"){
@@ -25,20 +26,9 @@ pipeline {
                 cd app/
                 mkdir /var/www/html/trivy/pipeline${BUILD_NUMBER}/
                 touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportconfig.html
-                trivy config . --format template --template "@deploy/html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportconfig.html --severity HIGH,CRITICAL
+                trivy config . --format template --template "@deploy/html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportconfig.html --exit-code 1 --severity HIGH,CRITICAL
                 '''
             } 
-        }
-
-        // scan keamanan dependency yang dibutuhkan docker file
-         stage("Filesystem Scanner"){
-            steps{
-                sh '''
-                cd app/
-                touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportfilesystem.html
-                trivy fs . --format template --template "@deploy/html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportfilesystem.html --ignore-unfixed --severity HIGH,CRITICAL
-                '''
-            }
         }
 
         stage('Create Image') {
@@ -51,17 +41,16 @@ pipeline {
         }
 
         
-
         // scan image
         stage("Vulnerability and Secret Scanner"){
             steps{
                 sh '''
                 cd app/deploy
                 touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.html
-                trivy image --format template --template "@html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.html --ignore-unfixed --severity HIGH,CRITICAL 10.8.60.126:5000/devsecops:v${BUILD_NUMBER} 
+                trivy image --format template --template "@html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.html --exit-code 1  --ignore-unfixed --severity HIGH,CRITICAL 10.8.60.126:5000/devsecops:v${BUILD_NUMBER} 
                 
                 touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretdb.html
-                trivy image --format template --template "@html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretdb.html --ignore-unfixed --severity HIGH,CRITICAL mariadb:10.6.3
+                trivy image --format template --template "@html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretdb.html --exit-code 1 --ignore-unfixed --severity HIGH,CRITICAL mariadb:10.6.3
                 '''
             }
         }
@@ -73,6 +62,8 @@ pipeline {
                 docker login --username=admin --password=$nexusPassword 10.8.60.126:5000
                 set -x
                 docker push 10.8.60.126:5000/devsecops:v${BUILD_NUMBER}
+                docker rmi 10.8.60.126:5000/devsecops:v${BUILD_NUMBER}
+                docker images
                 '''
             }
         }
