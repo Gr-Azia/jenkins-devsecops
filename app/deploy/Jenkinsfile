@@ -39,8 +39,6 @@ pipeline {
                 '''
             }
         }
-
-        
         // scan image
         stage("Vulnerability and Secret Scanner"){
             steps{
