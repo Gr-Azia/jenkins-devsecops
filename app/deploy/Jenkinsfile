@@ -35,7 +35,7 @@ pipeline {
             steps {
                 sh '''
                 docker image rm 10.8.60.126:5000/devsecops:v${BUILD_NUMBER} || echo "No existing image found"
-                docker-compose -f app/deploy/docker-compose.yaml build --no-cache
+                docker build --no-cache -t 0.8.60.126:5000/devsecops:v${BUILD_NUMBER} -f app/deploy/Dockerfile
                 '''
             }
         }
@@ -45,10 +45,7 @@ pipeline {
                 sh '''
                 cd app/deploy
                 touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.html
-                trivy image --format template --template "@html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.html --exit-code 1  --ignore-unfixed --severity HIGH,CRITICAL 10.8.60.126:5000/devsecops:v${BUILD_NUMBER} 
-                
-                touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretdb.html
-                trivy image --format template --template "@html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretdb.html --exit-code 1 --ignore-unfixed --severity HIGH,CRITICAL mariadb:10.6.3
+                trivy image --format template --template "@html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.html --exit-code 1 --severity HIGH,CRITICAL 10.8.60.126:5000/devsecops:v${BUILD_NUMBER} 
                 '''
             }
         }
