@@ -4,11 +4,12 @@ pipeline {
         stage('Zap Proxy') {
             steps {
                     sh '''
-                    docker run --rm -v /zap:/zap/wrk:rw -v /opt/hosts_zap:/etc/hosts -t owasp/zap2docker-stable zap-baseline.py -I -j \
+                    docker run --rm -v /zap:/zap/wrk:rw -v /opt/hosts_zap:/etc/hosts -t ictu/zap2docker-weekly zap-baseline.py -I -j \
                     -t http://gosip-app-intern-devsecops-dev.apps.lab.i3datacenter.my.id/ \
-                    -r report.html \
-                    -J report.json \
-                    -g report.conf \
+                    -r reportzap.html \
+                    -J reportzap.json \
+                    -g reportzap.conf \
+                    --hook=/zap/auth_hook.py \
                     -z "auth.loginurl=http://gosip-app-intern-devsecops-dev.apps.lab.i3datacenter.my.id/login \
                         auth.username="user" \
                         auth.password="password""
