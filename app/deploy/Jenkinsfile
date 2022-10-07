@@ -21,6 +21,8 @@ pipeline {
                 cd app/
                 mkdir /var/www/html/trivy/pipeline${BUILD_NUMBER}/
                 touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportconfig.html
+                touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportconfig.json
+                trivy config . -f json -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportconfig.json
                 trivy config . --format template --template "@deploy/html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportconfig.html --exit-code 0 --severity HIGH,CRITICAL
                 '''
             } 
@@ -40,6 +42,8 @@ pipeline {
                 sh '''
                 cd app/deploy
                 touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.html
+                touch /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.json
+                trivy image -f json -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.json 10.8.60.123:5000/devsecops:v${BUILD_NUMBER}
                 trivy image --format template --template "@html.tpl" -o /var/www/html/trivy/pipeline${BUILD_NUMBER}/reportimagesecretpython.html --exit-code 0 --severity HIGH,CRITICAL 10.8.60.123:5000/devsecops:v${BUILD_NUMBER} 
                 '''
             }
